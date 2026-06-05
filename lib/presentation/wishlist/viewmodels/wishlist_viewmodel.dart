@@ -7,9 +7,25 @@ class WishlistNotifier extends AsyncNotifier<List<ProductWithImage>> {
   late WishlistRepository _repository;
 
   @override
-  FutureOr<List<ProductWithImage>> build() {
+  FutureOr<List<ProductWithImage>> build() async {
     _repository = ref.watch(wishlistRepositoryProvider);
-    return _repository.getWishlist();
+    final list = await _repository.getWishlist();
+
+    // Auto-seed sample wishlist items if empty for demo purposes
+    if (list.isEmpty) {
+      try {
+        final products = await ref.read(productRepositoryProvider).getProductsWithImages(limit: 3);
+        if (products.isNotEmpty) {
+          for (var p in products) {
+            await _repository.addToWishlist(p.product.id);
+          }
+          return await _repository.getWishlist();
+        }
+      } catch (e) {
+        print('Wishlist auto-seed error: $e');
+      }
+    }
+    return list;
   }
 
   Future<void> toggleWishlist(String productId) async {

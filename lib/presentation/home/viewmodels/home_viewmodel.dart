@@ -20,14 +20,14 @@ class CategoriesNotifier extends AsyncNotifier<List<CategoryModel>> {
 
 // ── Featured / New Arrival Products ─────────────────────────────────────────
 
-final featuredProductsProvider = AsyncNotifierProvider<FeaturedProductsNotifier, List<ProductModel>>(() {
+final featuredProductsProvider = AsyncNotifierProvider<FeaturedProductsNotifier, List<ProductWithImage>>(() {
   return FeaturedProductsNotifier();
 });
 
-class FeaturedProductsNotifier extends AsyncNotifier<List<ProductModel>> {
+class FeaturedProductsNotifier extends AsyncNotifier<List<ProductWithImage>> {
   @override
-  FutureOr<List<ProductModel>> build() {
-    return ref.watch(productRepositoryProvider).getProducts(limit: 10);
+  FutureOr<List<ProductWithImage>> build() {
+    return ref.watch(productRepositoryProvider).getProductsWithImages(limit: 10);
   }
 }
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../viewmodels/cart_viewmodel.dart';
 import '../../../data/repositories/cart_repository.dart';
@@ -230,12 +231,21 @@ class CartScreen extends ConsumerWidget {
             const SizedBox(height: 24),
             ElevatedButton(
               onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Checkout is currently disabled (Demo mode)'),
-                    backgroundColor: AppTheme.burgundy,
-                  ),
-                );
+                final items = ref.read(cartProvider).value ?? [];
+                if (items.isEmpty) return;
+
+                final checkoutItems = items.map((item) => {
+                  'productId': item.productId,
+                  'variantId': item.variantId,
+                  'productName': item.productName,
+                  'quantity': item.quantity,
+                  'price': item.price,
+                  'size': item.size,
+                  'color': item.color,
+                  'imageUrl': item.imageUrl,
+                }).toList();
+
+                context.push('/checkout?fromCart=true', extra: checkoutItems);
               },
               child: Text(
                 'PROCEED TO CHECKOUT',

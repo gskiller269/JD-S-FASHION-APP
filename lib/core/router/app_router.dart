@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -14,6 +15,11 @@ import '../../presentation/wishlist/views/wishlist_screen.dart';
 import '../../presentation/profile/views/profile_screen.dart';
 import '../../presentation/onboarding/views/onboarding_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../presentation/product_details/views/product_details_screen.dart';
+import '../../presentation/checkout/views/checkout_screen.dart';
+import '../../presentation/checkout/views/order_success_screen.dart';
+import '../../presentation/order_tracking/views/order_tracking_screen.dart';
+import '../../data/repositories/product_repository.dart';
 
 // Provider for the router to allow navigation from anywhere using ref
 final goRouterProvider = Provider<GoRouter>((ref) {
@@ -99,6 +105,83 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           slug: state.pathParameters['slug']!,
         ),
       ),
+      GoRoute(
+        path: '/product-details',
+        name: 'product-details',
+        builder: (context, state) {
+          if (state.extra == null || state.extra is! ProductWithDetails) {
+            return const FallbackRedirectWidget();
+          }
+          final product = state.extra as ProductWithDetails;
+          return ProductDetailsScreen(product: product);
+        },
+      ),
+      GoRoute(
+        path: '/checkout',
+        name: 'checkout',
+        builder: (context, state) {
+          if (state.extra == null || state.extra is! List<Map<String, dynamic>>) {
+            return const FallbackRedirectWidget();
+          }
+          final extra = state.extra as List<Map<String, dynamic>>;
+          final isFromCart = state.uri.queryParameters['fromCart'] == 'true';
+          return CheckoutScreen(checkoutItems: extra, isFromCart: isFromCart);
+        },
+      ),
+      GoRoute(
+        path: '/order-success',
+        name: 'order-success',
+        builder: (context, state) {
+          if (state.extra == null || state.extra is! Map<String, dynamic>) {
+            return const FallbackRedirectWidget();
+          }
+          final extra = state.extra as Map<String, dynamic>;
+          return OrderSuccessScreen(
+            orderId: extra['orderId'] as String,
+            totalAmount: extra['totalAmount'] as double,
+            paymentMethod: extra['paymentMethod'] as String,
+          );
+        },
+      ),
+      GoRoute(
+        path: '/order-tracking',
+        name: 'order-tracking',
+        builder: (context, state) {
+          final orderId = state.extra as String?;
+          return OrderTrackingScreen(orderId: orderId);
+        },
+      ),
     ],
   );
 });
+
+class FallbackRedirectWidget extends StatefulWidget {
+  const FallbackRedirectWidget({super.key});
+
+  @override
+  State<FallbackRedirectWidget> createState() => _FallbackRedirectWidgetState();
+}
+
+class _FallbackRedirectWidgetState extends State<FallbackRedirectWidget> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.go('/');
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      backgroundColor: Colors.white,
+      body: Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF800020)),
+        ),
+      ),
+    );
+  }
+}

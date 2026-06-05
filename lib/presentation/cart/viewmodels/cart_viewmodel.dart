@@ -1,14 +1,36 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/repositories/cart_repository.dart';
+import '../../../data/repositories/auth_repository.dart';
 
 class CartNotifier extends AsyncNotifier<List<CartItemWithProduct>> {
   late CartRepository _repository;
 
   @override
-  FutureOr<List<CartItemWithProduct>> build() {
+  FutureOr<List<CartItemWithProduct>> build() async {
     _repository = ref.watch(cartRepositoryProvider);
-    return _repository.getCart();
+    final list = await _repository.getCart();
+
+    // Auto-seed sample cart items if empty for demo purposes
+    if (list.isEmpty) {
+      try {
+        final variantsResponse = await ref.read(supabaseProvider)
+            .from('product_variants')
+            .select('id')
+            .limit(2);
+
+        if (variantsResponse.isNotEmpty) {
+          for (var item in variantsResponse) {
+            final variantId = item['id'] as String;
+            await _repository.addToCart(variantId, 1);
+          }
+          return await _repository.getCart();
+        }
+      } catch (e) {
+        print('Cart auto-seed error: $e');
+      }
+    }
+    return list;
   }
 
   Future<void> addItem(String variantId, int quantity) async {
