@@ -82,9 +82,35 @@ class CartRepository {
     }).toList();
   }
 
+  Future<void> _ensureProfileExists(String userId) async {
+    try {
+      final response = await _supabase
+          .from('profiles')
+          .select('id')
+          .eq('id', userId)
+          .maybeSingle();
+
+      if (response == null) {
+        final email = _supabase.auth.currentUser?.email ?? 'user@example.com';
+        final fullName = _supabase.auth.currentUser?.userMetadata?['full_name'] as String? ?? email.split('@').first;
+        await _supabase.from('profiles').insert({
+          'id': userId,
+          'full_name': fullName,
+          'avatar_url': 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&q=80',
+          'role': 'customer',
+        });
+        print('Created missing profile for user: $userId');
+      }
+    } catch (e) {
+      print('Error in ensureProfileExists: $e');
+    }
+  }
+
   Future<void> addToCart(String variantId, int quantity) async {
     final userId = _currentUserId;
     if (userId == null) throw Exception('User not authenticated');
+
+    await _ensureProfileExists(userId);
 
     await _supabase.from('cart_items').upsert({
       'user_id': userId,

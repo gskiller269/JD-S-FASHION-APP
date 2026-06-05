@@ -63,12 +63,17 @@ class ProfileController extends GetxController {
           final dbName = profileResponse['full_name'] as String?;
           final dbPhone = profileResponse['phone_number'] as String?;
           final dbAvatar = profileResponse['avatar_url'] as String?;
-          final dbRole = profileResponse['role'] as String? ?? 'Luxury Member';
+          final dbRole = profileResponse['role'] as String? ?? 'customer';
 
           if (dbName != null && dbName.isNotEmpty) userName.value = dbName;
           if (dbPhone != null && dbPhone.isNotEmpty) userPhone.value = dbPhone;
           if (dbAvatar != null && dbAvatar.isNotEmpty) userAvatarUrl.value = dbAvatar;
-          userRole.value = dbRole;
+          
+          if (dbRole == 'customer') {
+            userRole.value = 'Luxury Member';
+          } else {
+            userRole.value = dbRole;
+          }
 
           // Save to local cache
           await prefs.setString('profile_user_name', userName.value);
@@ -98,12 +103,16 @@ class ProfileController extends GetxController {
 
       // Sync backend
       final userId = _supabase.auth.currentUser?.id;
-      if (userId != null) {
-        await _supabase.from('profiles').update({
+        final dbRole = (userRole.value == 'vendor' || userRole.value == 'admin')
+            ? userRole.value
+            : 'customer';
+        await _supabase.from('profiles').upsert({
+          'id': userId,
           'full_name': name,
           'phone_number': phone,
-        }).eq('id', userId);
-      }
+          'avatar_url': userAvatarUrl.value,
+          'role': dbRole,
+        });
 
       Get.snackbar(
         'Success',
@@ -137,9 +146,16 @@ class ProfileController extends GetxController {
 
       final userId = _supabase.auth.currentUser?.id;
       if (userId != null) {
-        await _supabase.from('profiles').update({
+        final dbRole = (userRole.value == 'vendor' || userRole.value == 'admin')
+            ? userRole.value
+            : 'customer';
+        await _supabase.from('profiles').upsert({
+          'id': userId,
           'avatar_url': newAvatarUrl,
-        }).eq('id', userId);
+          'full_name': userName.value,
+          'phone_number': userPhone.value,
+          'role': dbRole,
+        });
       }
     } catch (e) {
       print('Avatar sync error: $e');

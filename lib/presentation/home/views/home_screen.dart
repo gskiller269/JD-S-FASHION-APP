@@ -18,7 +18,6 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  int _currentNavIndex = 0;
 
   // Premium category data with Unsplash fashion product thumbnails
   final List<Map<String, String>> _categories = [
@@ -143,6 +142,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildHeader(BuildContext context) {
+    final wishlistCount = ref.watch(wishlistProvider).value?.length ?? 0;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
@@ -175,40 +176,41 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
             ),
             
-            // Cart Icon with Badge
+            // Wishlist Icon with Badge
             Stack(
               clipBehavior: Clip.none,
               children: [
                 IconButton(
-                  onPressed: () => context.pushNamed('cart'),
-                  icon: const Icon(Icons.shopping_bag_outlined, color: Color(0xFF222222), size: 26),
+                  onPressed: () => context.pushNamed('wishlist'),
+                  icon: const Icon(Icons.favorite_border_rounded, color: Color(0xFF222222), size: 26),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
                 ),
-                Positioned(
-                  right: -4,
-                  top: -2,
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF800020), // Primary Burgundy
-                      shape: BoxShape.circle,
-                    ),
-                    constraints: const BoxConstraints(
-                      minWidth: 16,
-                      minHeight: 16,
-                    ),
-                    child: const Text(
-                      '3',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 8,
-                        fontWeight: FontWeight.bold,
+                if (wishlistCount > 0)
+                  Positioned(
+                    right: -4,
+                    top: -2,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF800020), // Primary Burgundy
+                        shape: BoxShape.circle,
                       ),
-                      textAlign: TextAlign.center,
+                      constraints: const BoxConstraints(
+                        minWidth: 16,
+                        minHeight: 16,
+                      ),
+                      child: Text(
+                        '$wishlistCount',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 8,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
                     ),
                   ),
-                ),
               ],
             ),
           ],
@@ -1068,35 +1070,35 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _buildBottomNavItem(
-                index: 0,
+                isActive: true,
                 icon: Icons.home_outlined,
                 activeIcon: Icons.home_rounded,
                 label: 'Home',
                 onTap: () {},
               ),
               _buildBottomNavItem(
-                index: 1,
+                isActive: false,
                 icon: Icons.grid_view_outlined,
                 activeIcon: Icons.grid_view_rounded,
                 label: 'Categories',
                 onTap: () => context.pushNamed('categories'),
               ),
               _buildBottomNavItem(
-                index: 2,
-                icon: Icons.favorite_outline_rounded,
-                activeIcon: Icons.favorite_rounded,
-                label: 'Wishlist',
-                onTap: () => context.pushNamed('wishlist'),
+                isActive: false,
+                icon: Icons.shopping_cart_outlined,
+                activeIcon: Icons.shopping_cart_rounded,
+                label: 'Cart',
+                onTap: () => context.pushNamed('cart'),
               ),
               _buildBottomNavItem(
-                index: 3,
+                isActive: false,
                 icon: Icons.shopping_bag_outlined,
                 activeIcon: Icons.shopping_bag_rounded,
                 label: 'Orders',
                 onTap: () => context.push('/order-tracking'),
               ),
               _buildBottomNavItem(
-                index: 4,
+                isActive: false,
                 icon: Icons.person_outline_rounded,
                 activeIcon: Icons.person_rounded,
                 label: 'Profile',
@@ -1110,21 +1112,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildBottomNavItem({
-    required int index,
+    required bool isActive,
     required IconData icon,
     required IconData activeIcon,
     required String label,
     required VoidCallback onTap,
   }) {
-    final isActive = _currentNavIndex == index;
-    
     return GestureDetector(
-      onTap: () {
-        setState(() {
-          _currentNavIndex = index;
-        });
-        onTap();
-      },
+      onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: Column(
         mainAxisSize: MainAxisSize.min,

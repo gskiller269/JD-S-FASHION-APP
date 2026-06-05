@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -186,104 +187,123 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     final size = MediaQuery.of(context).size;
     final isLargeScreen = size.width > 600;
 
-    return Scaffold(
-      backgroundColor: isLargeScreen ? const Color(0xFFF5F5F5) : Colors.white,
-      appBar: AppBar(
-        title: Text(
-          'Order Tracking',
-          style: GoogleFonts.playfairDisplay(
-            fontWeight: FontWeight.bold,
-            color: AppTheme.darkAccent,
+    return Theme(
+      data: AppTheme.lightTheme,
+      child: Scaffold(
+        backgroundColor: isLargeScreen ? const Color(0xFFF5F5F5) : Colors.white,
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          surfaceTintColor: Colors.white,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          systemOverlayStyle: SystemUiOverlayStyle.dark.copyWith(
+            statusBarColor: Colors.white,
+            statusBarIconBrightness: Brightness.dark,
+            statusBarBrightness: Brightness.light,
+          ),
+          title: Text(
+            'Order Tracking',
+            style: GoogleFonts.playfairDisplay(
+              fontWeight: FontWeight.bold,
+              color: AppTheme.darkAccent,
+            ),
+          ),
+          centerTitle: true,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20, color: AppTheme.darkAccent),
+            onPressed: () {
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go('/');
+              }
+            },
           ),
         ),
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20, color: AppTheme.darkAccent),
-          onPressed: () {
-            if (context.canPop()) {
-              context.pop();
-            } else {
-              context.go('/');
-            }
-          },
-        ),
-      ),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 500),
-          child: Container(
-            color: Colors.white,
-            child: Obx(() {
-              if (controller.isLoading.value) {
-                return const Center(
-                  child: CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(AppTheme.burgundy),
-                  ),
-                );
-              }
+        body: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 500),
+            child: Container(
+              color: Colors.white,
+              child: Column(
+                children: [
+                  Expanded(
+                    child: Obx(() {
+                      if (controller.isLoading.value) {
+                        return const Center(
+                          child: CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(AppTheme.burgundy),
+                          ),
+                        );
+                      }
 
-              final order = controller.order.value;
-              if (order == null) {
-                return Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24.0),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.search_off_rounded, size: 64, color: Colors.grey),
-                        const SizedBox(height: 16),
-                        Text(
-                          'No Order Tracked',
-                          style: GoogleFonts.playfairDisplay(fontSize: 18, fontWeight: FontWeight.bold),
+                      final order = controller.order.value;
+                      if (order == null) {
+                        return Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(24.0),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.search_off_rounded, size: 64, color: Colors.grey),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'No Order Tracked',
+                                  style: GoogleFonts.playfairDisplay(fontSize: 18, fontWeight: FontWeight.bold),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'You don\'t have any placed orders to track right now.',
+                                  textAlign: TextAlign.center,
+                                  style: GoogleFonts.outfit(color: Colors.grey),
+                                ),
+                                const SizedBox(height: 24),
+                                ElevatedButton(
+                                  onPressed: _showOrderHistoryDialog,
+                                  child: const Text('View Order History'),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }
+
+                      final formattedDate = DateFormat('MMM d, yyyy').format(order.createdAt);
+                      final formattedEstDate = DateFormat('MMM d, yyyy').format(order.estimatedDeliveryDate);
+
+                      return RefreshIndicator(
+                        onRefresh: controller.refreshOrder,
+                        color: AppTheme.burgundy,
+                        child: SingleChildScrollView(
+                          physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Status Header Card
+                              _buildStatusCard(order, formattedEstDate),
+
+                              // Animated Horizontal Stepper Timeline
+                              _buildHorizontalTimeline(),
+
+                              // Order Items Section
+                              _buildOrderItemsSection(order),
+
+                              // Delivery & Partner Info
+                              _buildDeliveryInfoSection(order, formattedDate),
+
+                              // Actions Block
+                              _buildActionButtons(),
+                              const SizedBox(height: 32),
+                            ],
+                          ),
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'You don\'t have any placed orders to track right now.',
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.outfit(color: Colors.grey),
-                        ),
-                        const SizedBox(height: 24),
-                        ElevatedButton(
-                          onPressed: _showOrderHistoryDialog,
-                          child: const Text('View Order History'),
-                        ),
-                      ],
-                    ),
+                      );
+                    }),
                   ),
-                );
-              }
-
-              final formattedDate = DateFormat('MMM d, yyyy').format(order.createdAt);
-              final formattedEstDate = DateFormat('MMM d, yyyy').format(order.estimatedDeliveryDate);
-
-              return RefreshIndicator(
-                onRefresh: controller.refreshOrder,
-                color: AppTheme.burgundy,
-                child: SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Status Header Card
-                      _buildStatusCard(order, formattedEstDate),
-
-                      // Animated Horizontal Stepper Timeline
-                      _buildHorizontalTimeline(),
-
-                      // Order Items Section
-                      _buildOrderItemsSection(order),
-
-                      // Delivery & Partner Info
-                      _buildDeliveryInfoSection(order, formattedDate),
-
-                      // Actions Block
-                      _buildActionButtons(),
-                      const SizedBox(height: 32),
-                    ],
-                  ),
-                ),
-              );
-            }),
+                  _buildBottomNavigationBar(context),
+                ],
+              ),
+            ),
           ),
         ),
       ),
@@ -704,6 +724,116 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.burgundy,
               padding: const EdgeInsets.symmetric(vertical: 16),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBottomNavigationBar(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, -4),
+          ),
+        ],
+        border: Border(
+          top: BorderSide(color: const Color(0xFFF5F5F5), width: 1),
+        ),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildBottomNavItem(
+                context,
+                isActive: false,
+                icon: Icons.home_outlined,
+                activeIcon: Icons.home_rounded,
+                label: 'Home',
+                onTap: () => context.go('/'),
+              ),
+              _buildBottomNavItem(
+                context,
+                isActive: false,
+                icon: Icons.grid_view_outlined,
+                activeIcon: Icons.grid_view_rounded,
+                label: 'Categories',
+                onTap: () => context.go('/categories'),
+              ),
+              _buildBottomNavItem(
+                context,
+                isActive: false,
+                icon: Icons.shopping_cart_outlined,
+                activeIcon: Icons.shopping_cart_rounded,
+                label: 'Cart',
+                onTap: () => context.pushNamed('cart'),
+              ),
+              _buildBottomNavItem(
+                context,
+                isActive: true,
+                icon: Icons.shopping_bag_outlined,
+                activeIcon: Icons.shopping_bag_rounded,
+                label: 'Orders',
+                onTap: () {},
+              ),
+              _buildBottomNavItem(
+                context,
+                isActive: false,
+                icon: Icons.person_outline_rounded,
+                activeIcon: Icons.person_rounded,
+                label: 'Profile',
+                onTap: () => context.pushNamed('profile'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBottomNavItem(
+    BuildContext context, {
+    required bool isActive,
+    required IconData icon,
+    required IconData activeIcon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            decoration: BoxDecoration(
+              color: isActive ? const Color(0xFF800020).withOpacity(0.08) : Colors.transparent,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Icon(
+              isActive ? activeIcon : icon,
+              color: isActive ? const Color(0xFF800020) : const Color(0xFF666666),
+              size: 22,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: GoogleFonts.outfit(
+              fontSize: 10,
+              fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
+              color: isActive ? const Color(0xFF800020) : const Color(0xFF666666),
             ),
           ),
         ],

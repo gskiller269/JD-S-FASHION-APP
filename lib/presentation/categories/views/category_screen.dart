@@ -606,10 +606,10 @@ class _CategoryScreenState extends ConsumerState<CategoryScreen> {
               _buildBottomNavItem(
                 context,
                 isActive: false,
-                icon: Icons.favorite_outline_rounded,
-                activeIcon: Icons.favorite_rounded,
-                label: 'Wishlist',
-                onTap: () => context.pushNamed('wishlist'),
+                icon: Icons.shopping_cart_outlined,
+                activeIcon: Icons.shopping_cart_rounded,
+                label: 'Cart',
+                onTap: () => context.pushNamed('cart'),
               ),
               _buildBottomNavItem(
                 context,

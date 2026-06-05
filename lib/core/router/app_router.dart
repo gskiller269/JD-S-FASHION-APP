@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:get/get.dart';
 
 import '../../presentation/home/views/home_screen.dart';
 import '../../presentation/auth/views/login_screen.dart';
@@ -26,6 +27,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
   final authStateAsync = ref.watch(authStateProvider);
 
   return GoRouter(
+    navigatorKey: Get.key,
     initialLocation: '/splash',
     redirect: (context, state) {
       // If auth state is still loading, don't redirect yet

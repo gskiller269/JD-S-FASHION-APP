@@ -328,10 +328,10 @@ class CategoriesScreen extends ConsumerWidget {
               _buildBottomNavItem(
                 context,
                 isActive: false,
-                icon: Icons.favorite_outline_rounded,
-                activeIcon: Icons.favorite_rounded,
-                label: 'Wishlist',
-                onTap: () => context.pushNamed('wishlist'),
+                icon: Icons.shopping_cart_outlined,
+                activeIcon: Icons.shopping_cart_rounded,
+                label: 'Cart',
+                onTap: () => context.pushNamed('cart'),
               ),
               _buildBottomNavItem(
                 context,
@@ -339,7 +339,7 @@ class CategoriesScreen extends ConsumerWidget {
                 icon: Icons.shopping_bag_outlined,
                 activeIcon: Icons.shopping_bag_rounded,
                 label: 'Orders',
-                onTap: () => context.pushNamed('cart'),
+                onTap: () => context.push('/order-tracking'),
               ),
               _buildBottomNavItem(
                 context,

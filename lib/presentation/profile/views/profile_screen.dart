@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
@@ -496,91 +497,103 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final size = MediaQuery.of(context).size;
     final isLargeScreen = size.width > 600;
 
-    return Scaffold(
-      backgroundColor: isLargeScreen ? const Color(0xFFF5F5F5) : Colors.white,
-      appBar: AppBar(
-        title: Text(
-          'My Profile',
-          style: GoogleFonts.playfairDisplay(
-            fontWeight: FontWeight.bold,
-            color: AppTheme.darkAccent,
+    return Theme(
+      data: AppTheme.lightTheme,
+      child: Scaffold(
+        backgroundColor: isLargeScreen ? const Color(0xFFF5F5F5) : Colors.white,
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          surfaceTintColor: Colors.white,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          systemOverlayStyle: SystemUiOverlayStyle.dark.copyWith(
+            statusBarColor: Colors.white,
+            statusBarIconBrightness: Brightness.dark,
+            statusBarBrightness: Brightness.light,
           ),
-        ),
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20, color: AppTheme.darkAccent),
-          onPressed: () => context.pop(),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings_outlined, size: 22, color: AppTheme.darkAccent),
-            onPressed: _showSettingsSheet,
+          title: Text(
+            'My Profile',
+            style: GoogleFonts.playfairDisplay(
+              fontWeight: FontWeight.bold,
+              color: AppTheme.darkAccent,
+            ),
           ),
-        ],
-      ),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 500),
-          child: Container(
-            color: Colors.white,
-            child: Column(
-              children: [
-                Expanded(
-                  child: Obx(() {
-                    if (controller.isLoading.value) {
-                      return const Center(
-                        child: CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation<Color>(AppTheme.burgundy),
+          centerTitle: true,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20, color: AppTheme.darkAccent),
+            onPressed: () => context.pop(),
+          ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.settings_outlined, size: 22, color: AppTheme.darkAccent),
+              onPressed: _showSettingsSheet,
+            ),
+          ],
+        ),
+        body: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 500),
+            child: Container(
+              color: Colors.white,
+              child: Column(
+                children: [
+                  Expanded(
+                    child: Obx(() {
+                      if (controller.isLoading.value) {
+                        return const Center(
+                          child: CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(AppTheme.burgundy),
+                          ),
+                        );
+                      }
+
+                      return SingleChildScrollView(
+                        physics: const BouncingScrollPhysics(),
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            // Dark Premium Profile Card
+                            _buildDarkProfileCard(),
+                            const SizedBox(height: 28),
+
+                            // Menu Options Section
+                            Text(
+                              'ACCOUNT DETAILS',
+                              style: GoogleFonts.outfit(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.grey.shade500,
+                                letterSpacing: 1.0,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+
+                            _buildMenuItem(Icons.shopping_bag_outlined, 'My Orders', () => context.push('/order-tracking')),
+                            _buildMenuItem(Icons.shopping_cart_outlined, 'Cart', () => context.pushNamed('cart')),
+                            _buildMenuItem(Icons.location_on_outlined, 'Addresses', _showAddressesSheet),
+                            _buildMenuItem(Icons.credit_card_outlined, 'Payment Methods', _showPaymentsSheet),
+                            _buildMenuItem(Icons.confirmation_number_outlined, 'Coupons & Offers', _showCouponsSheet),
+                            _buildMenuItem(Icons.help_outline_rounded, 'Help & Support', _showHelpSupportSheet),
+                            _buildMenuItem(Icons.settings_outlined, 'Settings', _showSettingsSheet),
+                            
+                            const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 8),
+                              child: Divider(color: Color(0xFFF5F5F5)),
+                            ),
+
+                            _buildMenuItem(Icons.logout_rounded, 'Logout', _handleLogout, isDestructive: true),
+                            const SizedBox(height: 24),
+                          ],
                         ),
                       );
-                    }
+                    }),
+                  ),
 
-                    return SingleChildScrollView(
-                      physics: const BouncingScrollPhysics(),
-                      padding: const EdgeInsets.all(20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          // Dark Premium Profile Card
-                          _buildDarkProfileCard(),
-                          const SizedBox(height: 28),
-
-                          // Menu Options Section
-                          Text(
-                            'ACCOUNT DETAILS',
-                            style: GoogleFonts.outfit(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.grey.shade500,
-                              letterSpacing: 1.0,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-
-                          _buildMenuItem(Icons.shopping_bag_outlined, 'My Orders', () => context.push('/order-tracking')),
-                          _buildMenuItem(Icons.favorite_outline_rounded, 'My Wishlist', () => context.pushNamed('wishlist')),
-                          _buildMenuItem(Icons.location_on_outlined, 'Addresses', _showAddressesSheet),
-                          _buildMenuItem(Icons.credit_card_outlined, 'Payment Methods', _showPaymentsSheet),
-                          _buildMenuItem(Icons.confirmation_number_outlined, 'Coupons & Offers', _showCouponsSheet),
-                          _buildMenuItem(Icons.help_outline_rounded, 'Help & Support', _showHelpSupportSheet),
-                          _buildMenuItem(Icons.settings_outlined, 'Settings', _showSettingsSheet),
-                          
-                          const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 8),
-                            child: Divider(color: Color(0xFFF5F5F5)),
-                          ),
-
-                          _buildMenuItem(Icons.logout_rounded, 'Logout', _handleLogout, isDestructive: true),
-                          const SizedBox(height: 24),
-                        ],
-                      ),
-                    );
-                  }),
-                ),
-
-                // Matching bottom navigation bar
-                _buildBottomNavigationBar(context),
-              ],
+                  // Matching bottom navigation bar
+                  _buildBottomNavigationBar(context),
+                ],
+              ),
             ),
           ),
         ),
@@ -791,10 +804,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ),
               _buildBottomNavItem(
                 isActive: false,
-                icon: Icons.favorite_outline_rounded,
-                activeIcon: Icons.favorite_rounded,
-                label: 'Wishlist',
-                onTap: () => context.pushNamed('wishlist'),
+                icon: Icons.shopping_cart_outlined,
+                activeIcon: Icons.shopping_cart_rounded,
+                label: 'Cart',
+                onTap: () => context.pushNamed('cart'),
               ),
               _buildBottomNavItem(
                 isActive: false,
